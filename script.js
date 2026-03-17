@@ -26,6 +26,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // ========== SUPABASE SETUP ==========
+    const supabaseUrl = 'https://mdpjutdhxreyeocbvnbn.supabase.co';
+    const supabaseKey = 'sb_publishable_CqqVEZ_M6GO7cGlJYGtZPQ_6b0MgRCM';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
     // ========== PLAYLIST DATA ==========
     const songs = [
         { name: 'mineral - parking lot', file: 'songs/Parking Lot.mp3' },
@@ -103,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ========== EVENT LISTENERS ==========
-    // Volume slider (with both input and change for mobile)
     volumeSlider.addEventListener('input', function(e) {
         const val = parseFloat(e.target.value);
         audio.volume = val;
@@ -115,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Volume change:', val);
     });
 
-    // Progress bar update
     audio.addEventListener('timeupdate', function() {
         if (audio.duration && isFinite(audio.duration)) {
             const percent = (audio.currentTime / audio.duration) * 100;
@@ -128,7 +131,6 @@ document.addEventListener('DOMContentLoaded', function() {
         durationSpan.textContent = formatTime(audio.duration);
     });
 
-    // Seek
     progressBar.addEventListener('input', function(e) {
         if (audio.duration && isFinite(audio.duration)) {
             const seekTime = (e.target.value / 100) * audio.duration;
@@ -154,83 +156,72 @@ document.addEventListener('DOMContentLoaded', function() {
     prevBtn.addEventListener('click', prevSong);
     audio.addEventListener('ended', nextSong);
 
-    // Load first song
     loadSong(0);
 
-// ========== VISUALIZER (FALLBACK) ==========
-const w = 500;
-const h = 100;
-canvas.width = w;
-canvas.height = h;
-const ctx = canvas.getContext('2d');
+    // ========== VISUALIZER ==========
+    const w = 500;
+    const h = 100;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
 
-let audioCtx, analyser, dataArray;
-let webAudioSupported = false;
+    let audioCtx, analyser, dataArray;
+    let webAudioSupported = false;
 
-function initWebAudio() {
-    if (audioCtx) return;
-    try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const source = audioCtx.createMediaElementSource(audio);
-        analyser = audioCtx.createAnalyser();
-        source.connect(analyser);
-        source.connect(audioCtx.destination);
-        dataArray = new Uint8Array(analyser.frequencyBinCount);
-        webAudioSupported = true;
-        console.log('Web Audio OK');
-    } catch (e) {
-        console.warn('Web Audio blocked, using animated fallback');
-    }
-}
-
-// Call initWebAudio on first play attempt (any method)
-const originalPlaySong = playSong;
-playSong = function() {
-    if (!webAudioSupported && !audioCtx) initWebAudio(); // try to init on first play
-    originalPlaySong();
-};
-
-// Also keep the button click listener as a backup (though playSong already covers it)
-playPauseBtn.addEventListener('click', function() {
-    if (!webAudioSupported && !audioCtx) initWebAudio();
-}, { once: true });
-
-function draw() {
-    requestAnimationFrame(draw);
-
-    if (webAudioSupported && analyser && !audio.paused) {
-        analyser.getByteFrequencyData(dataArray);
-    }
-
-    // Background
-    ctx.fillStyle = '#111111';
-    ctx.fillRect(0, 0, w, h);
-
-    // Center line
-    ctx.strokeStyle = '#993333';
-    ctx.beginPath();
-    ctx.moveTo(0, h/2);
-    ctx.lineTo(w, h/2);
-    ctx.stroke();
-
-    // Draw bars
-    const barCount = 64;
-    const barWidth = w / barCount;
-    for (let i = 0; i < barCount; i++) {
-        let barHeight;
-        if (webAudioSupported && !audio.paused && dataArray) {
-            const idx = Math.floor(i * (dataArray.length / barCount));
-            barHeight = dataArray[idx] / 2;
-        } else {
-            // Animated fallback
-            barHeight = 20 + Math.sin(i * 0.5 + Date.now() * 0.005) * 15;
+    function initWebAudio() {
+        if (audioCtx) return;
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaElementSource(audio);
+            analyser = audioCtx.createAnalyser();
+            source.connect(analyser);
+            source.connect(audioCtx.destination);
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            webAudioSupported = true;
+            console.log('Web Audio OK');
+        } catch (e) {
+            console.warn('Web Audio blocked, using animated fallback');
         }
-        const gray = 100 + i;
-        ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
-        ctx.fillRect(i * barWidth, h/2 - barHeight/2, barWidth - 2, barHeight);
     }
-}
-draw();
+
+    const originalPlaySong = playSong;
+    playSong = function() {
+        if (!webAudioSupported && !audioCtx) initWebAudio();
+        originalPlaySong();
+    };
+
+    playPauseBtn.addEventListener('click', function() {
+        if (!webAudioSupported && !audioCtx) initWebAudio();
+    }, { once: true });
+
+    function draw() {
+        requestAnimationFrame(draw);
+        if (webAudioSupported && analyser && !audio.paused) {
+            analyser.getByteFrequencyData(dataArray);
+        }
+        ctx.fillStyle = '#111111';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = '#993333';
+        ctx.beginPath();
+        ctx.moveTo(0, h/2);
+        ctx.lineTo(w, h/2);
+        ctx.stroke();
+        const barCount = 64;
+        const barWidth = w / barCount;
+        for (let i = 0; i < barCount; i++) {
+            let barHeight;
+            if (webAudioSupported && !audio.paused && dataArray) {
+                const idx = Math.floor(i * (dataArray.length / barCount));
+                barHeight = dataArray[idx] / 2;
+            } else {
+                barHeight = 20 + Math.sin(i * 0.5 + Date.now() * 0.005) * 15;
+            }
+            const gray = 100 + i;
+            ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+            ctx.fillRect(i * barWidth, h/2 - barHeight/2, barWidth - 2, barHeight);
+        }
+    }
+    draw();
 
     // ========== NAVIGATION ==========
     window.navigate = function(page) {
@@ -258,18 +249,7 @@ draw();
     const guestbookEntries = document.getElementById('guestbook-entries');
     const nameInput = document.getElementById('guest-name');
     const messageInput = document.getElementById('guest-message');
-
-    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xgonpvbl';
-
-    function loadGuestbook() {
-        const entries = JSON.parse(localStorage.getItem('guestbook') || '[]');
-        guestbookEntries.innerHTML = entries.map(entry => `
-            <div class="guestbook-entry">
-                <span class="name">${escapeHtml(entry.name)}</span>
-                <div class="message">${escapeHtml(entry.message)}</div>
-            </div>
-        `).join('');
-    }
+    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xgonpvbl'; // keep if you want email
 
     function escapeHtml(text) {
         const div = document.createElement('div');
@@ -277,45 +257,74 @@ draw();
         return div.innerHTML;
     }
 
+    // Supabase guestbook functions
+    async function loadGuestbookFromDB() {
+        const { data, error } = await supabase
+            .from('guestbook_messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(20);
+            
+        if (error) {
+            console.error('Error loading guestbook:', error);
+            return;
+        }
+        guestbookEntries.innerHTML = data.map(entry => `
+            <div class="guestbook-entry">
+                <span class="name">${escapeHtml(entry.name)}</span>
+                <div class="message">${escapeHtml(entry.message)}</div>
+            </div>
+        `).join('');
+    }
+
+    async function saveGuestbookToDB(name, message) {
+        const { error } = await supabase
+            .from('guestbook_messages')
+            .insert([{ name, message }]);
+            
+        if (error) {
+            console.error('Error saving:', error);
+            return false;
+        }
+        return true;
+    }
+
+    // Override form submission
     guestbookForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const name = nameInput.value.trim();
         const message = messageInput.value.trim();
-        
         if (!name || !message) return;
         
         const submitBtn = guestbookForm.querySelector('button');
         const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'sending...';
+        submitBtn.textContent = 'saving...';
         submitBtn.disabled = true;
         
-        try {
-            const response = await fetch(FORMSPREE_ENDPOINT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, message })
-            });
-            
-            if (response.ok) {
-                const entries = JSON.parse(localStorage.getItem('guestbook') || '[]');
-                entries.unshift({ name, message });
-                if (entries.length > 15) entries.pop();
-                localStorage.setItem('guestbook', JSON.stringify(entries));
-                
-                loadGuestbook();
-                guestbookForm.reset();
-                
-                submitBtn.textContent = 'sent!';
-                setTimeout(() => {
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                }, 2000);
-            } else {
-                throw new Error('Formspree error');
+        const saved = await saveGuestbookToDB(name, message);
+        
+        if (saved) {
+            // Optional: still send email
+            try {
+                await fetch(FORMSPREE_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, message })
+                });
+            } catch (e) {
+                console.log('Email send failed (non-critical)');
             }
-        } catch (error) {
-            console.error('Failed to send message:', error);
+            
+            guestbookForm.reset();
+            await loadGuestbookFromDB();
+            
+            submitBtn.textContent = 'sent!';
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }, 2000);
+        } else {
             submitBtn.textContent = 'error';
             setTimeout(() => {
                 submitBtn.textContent = originalText;
@@ -324,142 +333,37 @@ draw();
         }
     });
 
-    loadGuestbook();
+    // Load guestbook on start
+    loadGuestbookFromDB();
+
+    // ========== PAGE VIEW TRACKING ==========
+    async function trackPageView(pagePath) {
+        const { error } = await supabase.rpc('increment_view', { p_page_path: pagePath });
+        if (error) console.error('Error tracking view:', error);
+    }
+
+    // Call this when page changes
+    function updatePageView() {
+        const activeSection = document.querySelector('.active-section');
+        if (activeSection) {
+            const page = activeSection.id; // 'home' or 'about'
+            trackPageView(page);
+        }
+    }
+
+    // Override navigate to track views
+    const originalNav = window.navigate;
+    window.navigate = function(page) {
+        originalNav(page);
+        setTimeout(updatePageView, 100);
+    };
+
+    // Track initial page
+    window.addEventListener('load', () => {
+        setTimeout(updatePageView, 500);
+    });
 
     // Initialize home section
     navigate('home');
-    console.log('All systems go');
-});
-
-// ========== SUPABASE SETUP ==========
-const supabaseUrl = 'https://mdpjutdhxreyeocbvnbn.supabase.co';
-const supabaseKey = 'sb_publishable_CqqVEZ_M6GO7cGlJYGtZPQ_6b0MgRCM';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-// ========== GUESTBOOK WITH SUPABASE ==========
-async function loadGuestbookFromDB() {
-  const { data, error } = await supabase
-    .from('guestbook_messages')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(20);
-    
-  if (error) {
-    console.error('Error loading guestbook:', error);
-    return;
-  }
-  
-  const guestbookEntries = document.getElementById('guestbook-entries');
-  guestbookEntries.innerHTML = data.map(entry => `
-    <div class="guestbook-entry">
-      <span class="name">${escapeHtml(entry.name)}</span>
-      <div class="message">${escapeHtml(entry.message)}</div>
-    </div>
-  `).join('');
-}
-
-async function saveGuestbookToDB(name, message) {
-  const { error } = await supabase
-    .from('guestbook_messages')
-    .insert([{ name, message }]);
-    
-  if (error) {
-    console.error('Error saving:', error);
-    return false;
-  }
-  return true;
-}
-
-// Override the guestbook form submission
-guestbookForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const name = nameInput.value.trim();
-  const message = messageInput.value.trim();
-  if (!name || !message) return;
-  
-  const submitBtn = guestbookForm.querySelector('button');
-  const originalText = submitBtn.textContent;
-  submitBtn.textContent = 'saving...';
-  submitBtn.disabled = true;
-  
-  // Save to Supabase (still sends email via Formspree too)
-  const saved = await saveGuestbookToDB(name, message);
-  
-  if (saved) {
-    // Also send email (optional, you can remove Formspree later)
-    try {
-      await fetch(FORMSPREE_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, message })
-      });
-    } catch (e) {
-      console.log('Email send failed (non-critical)');
-    }
-    
-    guestbookForm.reset();
-    await loadGuestbookFromDB();
-    
-    submitBtn.textContent = 'sent!';
-    setTimeout(() => {
-      submitBtn.textContent = originalText;
-      submitBtn.disabled = false;
-    }, 2000);
-  } else {
-    submitBtn.textContent = 'error';
-    setTimeout(() => {
-      submitBtn.textContent = originalText;
-      submitBtn.disabled = false;
-    }, 2000);
-  }
-});
-
-// ========== PAGE VIEW TRACKING ==========
-async function trackPageView(pagePath) {
-  // Simple increment
-  const { data, error } = await supabase
-    .rpc('increment_view', { page_path: pagePath });
-    
-  if (error) {
-    console.error('Error tracking view:', error);
-  }
-}
-
-// Track unique views (better accuracy)
-async function trackUniqueView(pagePath) {
-  // Get a hash of the user's IP (handled by Supabase via request headers)
-  // This uses a more reliable method: let Supabase handle IP via RLS
-  const { data, error } = await supabase
-    .from('unique_views')
-    .upsert(
-      { page_path: pagePath, viewed_at: new Date() },
-      { onConflict: 'page_path, ip_hash' }
-    );
-    
-  if (error) {
-    console.error('Error tracking unique view:', error);
-  }
-}
-
-// Call this when page loads or section changes
-function updatePageView() {
-  const activeSection = document.querySelector('.active-section');
-  if (activeSection) {
-    const page = activeSection.id; // 'home' or 'about'
-    trackPageView(page);
-    trackUniqueView(page);
-  }
-}
-
-// Override navigate to track views
-const originalNavigate = navigate;
-navigate = function(page) {
-  originalNavigate(page);
-  setTimeout(updatePageView, 100); // Wait for DOM update
-};
-
-// Track initial page
-window.addEventListener('load', () => {
-  setTimeout(updatePageView, 500);
+    console.log('All systems go with Supabase');
 });

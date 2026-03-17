@@ -330,3 +330,136 @@ draw();
     navigate('home');
     console.log('All systems go');
 });
+
+// ========== SUPABASE SETUP ==========
+const supabaseUrl = 'YOUR_PROJECT_URL';
+const supabaseKey = 'YOUR_ANON_KEY';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+// ========== GUESTBOOK WITH SUPABASE ==========
+async function loadGuestbookFromDB() {
+  const { data, error } = await supabase
+    .from('guestbook_messages')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(20);
+    
+  if (error) {
+    console.error('Error loading guestbook:', error);
+    return;
+  }
+  
+  const guestbookEntries = document.getElementById('guestbook-entries');
+  guestbookEntries.innerHTML = data.map(entry => `
+    <div class="guestbook-entry">
+      <span class="name">${escapeHtml(entry.name)}</span>
+      <div class="message">${escapeHtml(entry.message)}</div>
+    </div>
+  `).join('');
+}
+
+async function saveGuestbookToDB(name, message) {
+  const { error } = await supabase
+    .from('guestbook_messages')
+    .insert([{ name, message }]);
+    
+  if (error) {
+    console.error('Error saving:', error);
+    return false;
+  }
+  return true;
+}
+
+// Override the guestbook form submission
+guestbookForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const name = nameInput.value.trim();
+  const message = messageInput.value.trim();
+  if (!name || !message) return;
+  
+  const submitBtn = guestbookForm.querySelector('button');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = 'saving...';
+  submitBtn.disabled = true;
+  
+  // Save to Supabase (still sends email via Formspree too)
+  const saved = await saveGuestbookToDB(name, message);
+  
+  if (saved) {
+    // Also send email (optional, you can remove Formspree later)
+    try {
+      await fetch(FORMSPREE_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, message })
+      });
+    } catch (e) {
+      console.log('Email send failed (non-critical)');
+    }
+    
+    guestbookForm.reset();
+    await loadGuestbookFromDB();
+    
+    submitBtn.textContent = 'sent!';
+    setTimeout(() => {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    }, 2000);
+  } else {
+    submitBtn.textContent = 'error';
+    setTimeout(() => {
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    }, 2000);
+  }
+});
+
+// ========== PAGE VIEW TRACKING ==========
+async function trackPageView(pagePath) {
+  // Simple increment
+  const { data, error } = await supabase
+    .rpc('increment_view', { page_path: pagePath });
+    
+  if (error) {
+    console.error('Error tracking view:', error);
+  }
+}
+
+// Track unique views (better accuracy)
+async function trackUniqueView(pagePath) {
+  // Get a hash of the user's IP (handled by Supabase via request headers)
+  // This uses a more reliable method: let Supabase handle IP via RLS
+  const { data, error } = await supabase
+    .from('unique_views')
+    .upsert(
+      { page_path: pagePath, viewed_at: new Date() },
+      { onConflict: 'page_path, ip_hash' }
+    );
+    
+  if (error) {
+    console.error('Error tracking unique view:', error);
+  }
+}
+
+// Call this when page loads or section changes
+function updatePageView() {
+  const activeSection = document.querySelector('.active-section');
+  if (activeSection) {
+    const page = activeSection.id; // 'home' or 'about'
+    trackPageView(page);
+    trackUniqueView(page);
+  }
+}
+
+// Override navigate to track views
+const originalNavigate = navigate;
+navigate = function(page) {
+  originalNavigate(page);
+  setTimeout(updatePageView, 100); // Wait for DOM update
+};
+
+// Track initial page
+window.addEventListener('load', () => {
+  setTimeout(updatePageView, 500);
+});

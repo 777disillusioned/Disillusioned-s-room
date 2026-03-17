@@ -1,0 +1,462 @@
+/* ===== BASE ===== */
+:root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --text: #e0e0e0;
+    --text-muted: #888888;
+    --accent: #993333;
+    --accent-dim: #5a3a3a;
+    --border: #2a2a2a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100vh;
+    overflow: hidden;        /* prevent body from scrolling */
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', 'JetBrains Mono', monospace;
+    line-height: 1.6;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== NAVIGATION ===== */
+nav {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+}
+
+.nav-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: normal;
+    letter-spacing: 2px;
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+    gap: 32px;
+}
+
+nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 12px;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+}
+
+nav a:hover {
+    color: var(--text);
+}
+
+nav li.active a {
+    color: var(--accent);
+}
+
+/* ===== MAIN (scrollable but scrollbar hidden) ===== */
+main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 24px;
+    flex: 1;
+    width: 100%;
+    overflow-y: scroll;        /* enables scrolling */
+    scrollbar-width: none;     /* Firefox - hide scrollbar */
+    -ms-overflow-style: none;  /* IE/Edge - hide scrollbar */
+}
+
+/* Hide scrollbar for Chrome/Safari */
+main::-webkit-scrollbar {
+    display: none;
+}
+
+#home, #about {
+    display: none;
+}
+
+#home.active-section, #about.active-section {
+    display: block;
+}
+
+/* ===== HOME ===== */
+.chat-container {
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dotted var(--border);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.name {
+    color: var(--text);
+}
+
+.music-section {
+    margin: 32px 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.note-card {
+    margin-top: 48px;
+    padding: 16px;
+    border-left: 2px solid var(--accent-dim);
+    background: var(--surface);
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+/* ===== ABOUT ===== */
+.section-title {
+    font-size: 24px;
+    font-weight: normal;
+    margin-bottom: 8px;
+    color: var(--text);
+    letter-spacing: 2px;
+}
+
+.section-intro {
+    color: var(--text-muted);
+    margin-bottom: 48px;
+    font-size: 13px;
+    border-left: 2px solid var(--accent-dim);
+    padding-left: 16px;
+}
+
+.section-subtitle {
+    font-size: 14px;
+    font-weight: normal;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+}
+
+/* ===== MUSIC PLAYER ===== */
+.music-player {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+#current-song {
+    color: var(--accent);
+    font-size: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px dotted var(--border);
+    padding-bottom: 8px;
+    flex-shrink: 0;
+}
+
+/* Visualizer */
+#visualizer {
+    width: 100%;
+    height: 100px;
+    background: #111;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    flex-shrink: 0;
+}
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+#progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+#progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Controls row with buttons and volume */
+.controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.controls {
+    display: flex;
+    gap: 16px;
+}
+
+.control-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.volume-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 14px;
+    min-width: 120px;
+}
+
+#volume-slider {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+#volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* ===== PLAYLIST – scrollable with your beautiful red scrollbar ===== */
+.playlist {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-top: 4px;
+}
+
+.playlist h3 {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+}
+
+#playlist {
+    list-style: none;
+    max-height: 140px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+/* Your original red scrollbar – untouched */
+#playlist::-webkit-scrollbar {
+    width: 4px;
+}
+
+#playlist::-webkit-scrollbar-track {
+    background: var(--border);
+}
+
+#playlist::-webkit-scrollbar-thumb {
+    background: var(--accent-dim);
+}
+
+#playlist::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+#playlist li {
+    padding: 8px 0;
+    border-bottom: 1px dotted var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#playlist li:hover {
+    color: var(--text);
+}
+
+#playlist li.active-song {
+    color: var(--accent);
+    border-left: 2px solid var(--accent);
+    padding-left: 8px;
+}
+
+/* ===== GUESTBOOK ===== */
+.guestbook {
+    border-top: 1px solid var(--border);
+    padding-top: 32px;
+}
+
+.guestbook-entries {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 12px;
+}
+
+.guestbook-entry {
+    padding: 12px 0;
+    border-bottom: 1px dotted var(--border);
+}
+
+.guestbook-entry:last-child {
+    border-bottom: none;
+}
+
+.guestbook-entry .name {
+    color: var(--accent);
+    margin-right: 8px;
+}
+
+.guestbook-entry .message {
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-size: 11px;
+}
+
+.guestbook-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.guestbook-form input,
+.guestbook-form textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.guestbook-form input:focus,
+.guestbook-form textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.guestbook-form button {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 1px;
+    transition: 0.2s;
+}
+
+.guestbook-form button:hover {
+    background: var(--accent);
+    color: var(--bg);
+}
+
+/* ===== FOOTER ===== */
+footer {
+    text-align: center;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 2px;
+    flex-shrink: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+    .nav-container {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    nav ul {
+        gap: 24px;
+    }
+    
+    main {
+        padding: 16px 16px;
+    }
+    
+    .chat-container {
+        max-width: 100%;
+    }
+
+    .controls-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .volume-container {
+        min-width: auto;
+    }
+}

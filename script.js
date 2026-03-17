@@ -332,8 +332,8 @@ draw();
 });
 
 // ========== SUPABASE SETUP ==========
-const supabaseUrl = 'YOUR_PROJECT_URL';
-const supabaseKey = 'YOUR_ANON_KEY';
+const supabaseUrl = 'https://mdpjutdhxreyeocbvnbn.supabase.co';
+const supabaseKey = 'sb_publishable_CqqVEZ_M6GO7cGlJYGtZPQ_6b0MgRCM';
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // ========== GUESTBOOK WITH SUPABASE ==========

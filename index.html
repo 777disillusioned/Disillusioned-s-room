@@ -34,7 +34,7 @@
                 <div class="music-section">
                     <h2 class="section-subtitle">now playing</h2>
                     <div class="music-player">
-                        <div id="current-song">beabadoobee - Care</div>
+                        <div id="current-song">Loading...</div>
                         
                         <!-- Canvas visualizer -->
                         <canvas id="visualizer" width="500" height="100"></canvas>
@@ -118,27 +118,27 @@
             <div id="admin-panel" style="display: none;">
                 <h3>Settings</h3>
 
-                <!-- Links editor -->
-            <!-- Links editor with image upload -->
-<div class="admin-section">
-    <h4>Edit Links</h4>
-    <div class="add-link-form" style="display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap;">
-        <input type="text" id="new-link-title" placeholder="Name (e.g., Instagram)" style="flex:2; min-width: 120px;">
-        <input type="text" id="new-link-url" placeholder="URL (e.g., https://instagram.com/@...)" style="flex:3; min-width: 180px;">
-        <input type="text" id="new-link-icon" placeholder="Emoji fallback" style="flex:1; min-width: 60px;" value="🔗">
-        <button id="add-link-submit">Add</button>
-    </div>
-    <ul id="admin-links-list"></ul>
-</div>
+                <!-- Links editor with image upload -->
+                <div class="admin-section">
+                    <h4>Edit Links</h4>
+                    <div class="add-link-form" style="display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <input type="text" id="new-link-title" placeholder="Name (e.g., Instagram)" style="flex:2; min-width: 120px;">
+                        <input type="text" id="new-link-url" placeholder="URL (e.g., https://instagram.com/@...)" style="flex:3; min-width: 180px;">
+                        <input type="text" id="new-link-icon" placeholder="Emoji fallback" style="flex:1; min-width: 60px;" value="🔗">
+                        <button id="add-link-submit">Add</button>
+                    </div>
                     <ul id="admin-links-list"></ul>
-                    <button id="add-link">Add Link</button>
                 </div>
 
-                <!-- Songs editor -->
+                <!-- Songs editor with MP3 upload -->
                 <div class="admin-section">
                     <h4>Edit Playlist</h4>
+                    <div class="add-song-form" style="display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;">
+                        <input type="text" id="new-song-name" placeholder="Song name" style="flex:2; min-width: 120px;">
+                        <input type="file" id="new-song-file" accept="audio/*" style="flex:2; min-width: 120px;">
+                        <button id="add-song-submit">Add Song</button>
+                    </div>
                     <ul id="admin-songs-list"></ul>
-                    <button id="add-song">Add Song</button>
                 </div>
 
                 <!-- Background Image Upload -->
@@ -183,7 +183,7 @@
                     <button id="save-blur">Save Blur</button>
                 </div>
 
-                <!-- Color Customization (NEW) -->
+                <!-- Color Customization -->
                 <div class="admin-section">
                     <h4>Color Customization</h4>
                     <div>

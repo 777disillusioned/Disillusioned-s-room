@@ -7,6 +7,42 @@
     --accent: #993333;
     --accent-dim: #5a3a3a;
     --border: #2a2a2a;
+    --bg-opacity: 1;
+    --surface-opacity: 1;
+    --note-opacity: 1;
+    --playlist-opacity: 1;
+    --guestbook-opacity: 1;
+    --blur-intensity: 0px;
+}
+
+body {
+    background: linear-gradient(rgba(0,0,0,var(--bg-opacity)), rgba(0,0,0,var(--bg-opacity))), 
+                var(--bg-image) center/cover fixed;
+    background-color: var(--bg); /* fallback */
+    /* We'll set background-image via JavaScript */
+}
+
+/* Apply opacity to elements */
+.music-player, .note-card, .playlist, .guestbook {
+    opacity: var(--surface-opacity);
+}
+
+.note-card {
+    opacity: var(--note-opacity);
+}
+
+.playlist {
+    opacity: var(--playlist-opacity);
+}
+
+.guestbook {
+    opacity: var(--guestbook-opacity);
+}
+
+/* Blur effect */
+main {
+    backdrop-filter: blur(var(--blur-intensity));
+    -webkit-backdrop-filter: blur(var(--blur-intensity));
 }
 
 * {
@@ -459,4 +495,254 @@ footer {
     .volume-container {
         min-width: auto;
     }
+}
+
+/* ===== BADGE ===== */
+.badge {
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* ===== LINKS SECTION ===== */
+.links-section {
+    margin-bottom: 32px;
+}
+
+.links-list {
+    list-style: none;
+    padding: 0;
+}
+
+.links-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px dotted var(--border);
+}
+
+.links-list a {
+    color: var(--text);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.links-list a:hover {
+    color: var(--accent);
+}
+
+.link-icon {
+    font-size: 18px;
+    min-width: 24px;
+}
+
+/* ===== ADMIN MODAL ===== */
+.admin-modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-modal-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    color: var(--text);
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 16px;
+    top: 12px;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.close:hover {
+    color: var(--accent);
+}
+
+#admin-password {
+    width: 100%;
+    padding: 8px;
+    margin: 8px 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+#admin-login {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.admin-section {
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+
+.admin-section ul {
+    list-style: none;
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 8px 0;
+}
+
+.admin-section li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.admin-section li input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px;
+}
+
+.admin-section li button {
+    background: none;
+    border: 1px solid var(--accent-dim);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.admin-section button {
+    background: var(--accent-dim);
+    color: var(--text);
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    margin-right: 4px;
+}
+
+/* ===== ADMIN MODAL SCROLLBARS (make them red like playlist) ===== */
+.admin-modal-content {
+    max-height: 80vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-dim) var(--border);
+}
+
+.admin-modal-content::-webkit-scrollbar {
+    width: 4px;
+}
+.admin-modal-content::-webkit-scrollbar-track {
+    background: var(--border);
+}
+.admin-modal-content::-webkit-scrollbar-thumb {
+    background: var(--accent-dim);
+}
+.admin-modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+.admin-section ul::-webkit-scrollbar {
+    width: 4px;
+}
+.admin-section ul::-webkit-scrollbar-track {
+    background: var(--border);
+}
+.admin-section ul::-webkit-scrollbar-thumb {
+    background: var(--accent-dim);
+}
+.admin-section ul::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* ===== GUESTBOOK ENTRIES SCROLLBAR (red like playlist) ===== */
+.guestbook-entries::-webkit-scrollbar {
+    width: 4px;
+}
+.guestbook-entries::-webkit-scrollbar-track {
+    background: var(--border);
+}
+.guestbook-entries::-webkit-scrollbar-thumb {
+    background: var(--accent-dim);
+}
+.guestbook-entries::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+.guestbook-entries {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-dim) var(--border);
+}
+
+/* Guestbook entries scrollbar (red) */
+.guestbook-entries::-webkit-scrollbar {
+    width: 4px;
+}
+.guestbook-entries::-webkit-scrollbar-track {
+    background: var(--border);
+}
+.guestbook-entries::-webkit-scrollbar-thumb {
+    background: var(--accent-dim);
+}
+.guestbook-entries::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+/* Firefox support */
+.guestbook-entries {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-dim) var(--border);
+}
+
+/* Link icon image in public view */
+.link-icon-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* Admin link list item layout */
+#admin-links-list li > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 4px 0;
+}
+.link-icon-preview {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+.link-icon-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.link-icon-preview .fallback-emoji {
+    font-size: 20px;
 }

@@ -28,6 +28,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const supabaseKey = 'sb_publishable_CqqVEZ_M6GO7cGlJYGtZPQ_6b0MgRCM';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+    // Optional: test bucket access (uncomment to debug)
+    // (async () => {
+    //     const { data: buckets, error } = await supabase.storage.listBuckets();
+    //     console.log('Supabase buckets:', buckets, error);
+    // })();
+
     // ========== PLAYLIST – LOAD FROM SUPABASE ==========
     let songs = [];
     let currentSongIndex = 0;
@@ -47,6 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (songs.length > 0) {
             if (currentSongIndex >= songs.length) currentSongIndex = 0;
             loadSong(currentSongIndex);
+        } else {
+            currentSongDisplay.textContent = 'No songs';
         }
     }
 
@@ -401,7 +409,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ========== ADMIN PANEL ==========
-    // Get admin elements
     const adminTrigger = document.getElementById('admin-trigger');
     const adminModal = document.getElementById('admin-modal');
     const closeModal = document.getElementById('close-modal');
@@ -410,12 +417,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const adminPanel = document.getElementById('admin-panel');
     const adminLinksList = document.getElementById('admin-links-list');
     const adminSongsList = document.getElementById('admin-songs-list');
-    const addLinkBtn = document.getElementById('add-link');
-    const addSongBtn = document.getElementById('add-song');
     const newLinkTitle = document.getElementById('new-link-title');
     const newLinkUrl = document.getElementById('new-link-url');
     const newLinkIcon = document.getElementById('new-link-icon');
     const addLinkSubmit = document.getElementById('add-link-submit');
+    const newSongName = document.getElementById('new-song-name');
+    const newSongFile = document.getElementById('new-song-file');
+    const addSongSubmit = document.getElementById('add-song-submit');
 
     // Site settings elements
     const bgUpload = document.getElementById('bg-upload');
@@ -436,8 +444,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const blurVal = document.getElementById('blur-val');
     const saveBlurBtn = document.getElementById('save-blur');
     const saveAllBtn = document.getElementById('save-all-settings');
-
-    // Color pickers
     const colorBg = document.getElementById('color-bg');
     const colorSurface = document.getElementById('color-surface');
     const colorText = document.getElementById('color-text');
@@ -458,6 +464,9 @@ document.addEventListener('DOMContentLoaded', function() {
         adminModal.style.display = 'none';
         adminPassword.value = '';
         adminPanel.style.display = 'none';
+        // Clear lists to force reload next login
+        adminLinksList.innerHTML = '';
+        adminSongsList.innerHTML = '';
     });
 
     adminLoginBtn.addEventListener('click', () => {
@@ -484,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ===== ADMIN LINK FUNCTIONS =====
+    // ===== ADMIN LINK FUNCTIONS WITH IMAGE UPLOAD =====
     async function loadAdminLinks() {
         const { data, error } = await supabase
             .from('links')
@@ -511,6 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </li>
         `).join('');
 
+        // Save link (title/url only)
         document.querySelectorAll('.save-link').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const li = e.target.closest('li');
@@ -529,10 +539,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
+        // Delete link
         document.querySelectorAll('.delete-link').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const li = e.target.closest('li');
                 const id = li.dataset.id;
+                const iconUrl = li.querySelector('img') ? li.querySelector('img').src : null;
+                if (iconUrl) {
+                    // Extract file name and delete from storage
+                    const fileName = iconUrl.split('/').pop();
+                    await supabase.storage.from('link-icons').remove([fileName]);
+                }
                 const { error } = await supabase
                     .from('links')
                     .delete()
@@ -545,6 +562,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
+        // Upload button click
         document.querySelectorAll('.upload-icon-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 const id = this.dataset.id;
@@ -553,29 +571,37 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
+        // File input change (with debug logs)
         document.querySelectorAll('.upload-icon').forEach(input => {
             input.addEventListener('change', async function(e) {
                 const file = e.target.files[0];
+                console.log('📁 File selected:', file);
                 if (!file) return;
                 const id = this.dataset.id;
+                console.log('🆔 Link ID:', id);
                 const fileName = `icon-${id}-${Date.now()}.${file.name.split('.').pop()}`;
+                console.log('📛 Generated file name:', fileName);
+                console.log('🚀 Starting upload to bucket: link-icons');
                 const { data, error } = await supabase.storage
                     .from('link-icons')
                     .upload(fileName, file, { cacheControl: '3600', upsert: true });
                 if (error) {
-                    console.error('Upload error:', error);
-                    alert('Failed to upload image');
+                    console.error('❌ Upload error:', error);
+                    alert('Upload failed: ' + error.message);
                     return;
                 }
+                console.log('✅ Upload successful, data:', data);
                 const { publicURL } = supabase.storage.from('link-icons').getPublicUrl(fileName);
+                console.log('🔗 Public URL:', publicURL);
                 const { error: updateError } = await supabase
                     .from('links')
                     .update({ icon_url: publicURL })
                     .eq('id', id);
                 if (updateError) {
-                    console.error('Error updating link with icon:', updateError);
+                    console.error('❌ DB update error:', updateError);
                     alert('Image uploaded but failed to save to DB');
                 } else {
+                    console.log('✅ Link updated in DB');
                     loadAdminLinks();
                     loadLinks();
                 }
@@ -607,17 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    if (addLinkBtn) {
-        addLinkBtn.addEventListener('click', async () => {
-            const { error } = await supabase
-                .from('links')
-                .insert([{ title: 'New Link', url: 'https://', icon: '🔗', display_order: 999 }]);
-            if (error) console.error('Error adding link:', error);
-            else loadAdminLinks();
-        });
-    }
-
-    // ===== ADMIN SONG FUNCTIONS (using Supabase) =====
+    // ===== ADMIN SONG FUNCTIONS WITH MP3 UPLOAD =====
     async function loadAdminSongs() {
         const { data, error } = await supabase
             .from('songs')
@@ -628,38 +644,49 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         adminSongsList.innerHTML = data.map(song => `
-            <li data-id="${song.id}">
-                <input type="text" value="${escapeHtml(song.name)}" placeholder="song name" class="song-name">
-                <input type="text" value="${escapeHtml(song.file)}" placeholder="file path" class="song-file">
-                <button class="save-song">💾</button>
-                <button class="delete-song">🗑️</button>
+            <li data-id="${song.id}" data-url="${song.file}">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(song.name)}</span>
+                    <input type="text" value="${escapeHtml(song.name)}" placeholder="song name" class="song-name" style="flex:2;">
+                    <input type="file" accept="audio/*" class="song-upload" style="display: none;" data-id="${song.id}">
+                    <button class="upload-song-btn" data-id="${song.id}">🎵 Upload MP3</button>
+                    <button class="save-song" data-id="${song.id}">💾 Rename</button>
+                    <button class="delete-song" data-id="${song.id}">🗑️</button>
+                </div>
             </li>
         `).join('');
 
+        // Rename (save) song name only
         document.querySelectorAll('.save-song').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const li = e.target.closest('li');
                 const id = li.dataset.id;
                 const name = li.querySelector('.song-name').value;
-                const file = li.querySelector('.song-file').value;
                 const { error } = await supabase
                     .from('songs')
-                    .update({ name, file })
+                    .update({ name })
                     .eq('id', id);
                 if (error) {
-                    console.error('Error saving song:', error);
-                    alert('Failed to save song');
+                    console.error('Error updating song name:', error);
+                    alert('Failed to update name');
                 } else {
-                    await loadSongsFromDB();   // reload player songs
-                    loadAdminSongs();           // refresh admin list
+                    await loadSongsFromDB();
+                    loadAdminSongs();
                 }
             });
         });
 
+        // Delete song
         document.querySelectorAll('.delete-song').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const li = e.target.closest('li');
                 const id = li.dataset.id;
+                const url = li.dataset.url;
+                // If it's a Supabase URL (uploaded), delete from storage
+                if (url && url.includes('supabase.co')) {
+                    const fileName = url.split('/').pop();
+                    await supabase.storage.from('songs').remove([fileName]);
+                }
                 const { error } = await supabase
                     .from('songs')
                     .delete()
@@ -673,20 +700,88 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+
+        // Upload button click
+        document.querySelectorAll('.upload-song-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const id = this.dataset.id;
+                const fileInput = document.querySelector(`.song-upload[data-id="${id}"]`);
+                fileInput.click();
+            });
+        });
+
+        // File input change
+        document.querySelectorAll('.song-upload').forEach(input => {
+            input.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const id = this.dataset.id;
+                const fileName = `song-${id}-${Date.now()}.mp3`;
+                const { data, error } = await supabase.storage
+                    .from('songs')
+                    .upload(fileName, file, { cacheControl: '3600', upsert: true });
+                if (error) {
+                    console.error('Upload error:', error);
+                    alert('Failed to upload MP3');
+                    return;
+                }
+                const { publicURL } = supabase.storage.from('songs').getPublicUrl(fileName);
+                const { error: updateError } = await supabase
+                    .from('songs')
+                    .update({ file: publicURL })
+                    .eq('id', id);
+                if (updateError) {
+                    console.error('Error updating song URL:', updateError);
+                    alert('MP3 uploaded but failed to update DB');
+                } else {
+                    await loadSongsFromDB();
+                    loadAdminSongs();
+                }
+            });
+        });
     }
 
-    addSongBtn.addEventListener('click', async () => {
-        const name = prompt('Enter song name:');
-        if (!name) return;
-        const file = prompt('Enter file path (e.g., songs/NewSong.mp3):');
-        if (!file) return;
-        const { error } = await supabase
+    // Add new song via form (with upload)
+    addSongSubmit.addEventListener('click', async () => {
+        const name = newSongName.value.trim();
+        const file = newSongFile.files[0];
+        if (!name || !file) {
+            alert('Please enter song name and select an MP3 file');
+            return;
+        }
+        // First insert song with placeholder URL (or null) to get ID
+        const { data: insertData, error: insertError } = await supabase
             .from('songs')
-            .insert([{ name, file, display_order: 999 }]);
-        if (error) {
-            console.error('Error adding song:', error);
+            .insert([{ name, file: '', display_order: 999 }])
+            .select();
+        if (insertError) {
+            console.error('Error adding song:', insertError);
             alert('Failed to add song');
+            return;
+        }
+        const newId = insertData[0].id;
+        const fileName = `song-${newId}-${Date.now()}.mp3`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('songs')
+            .upload(fileName, file, { cacheControl: '3600', upsert: true });
+        if (uploadError) {
+            console.error('Upload error:', uploadError);
+            alert('Failed to upload MP3');
+            // Delete the inserted row
+            await supabase.from('songs').delete().eq('id', newId);
+            return;
+        }
+        const { publicURL } = supabase.storage.from('songs').getPublicUrl(fileName);
+        const { error: updateError } = await supabase
+            .from('songs')
+            .update({ file: publicURL })
+            .eq('id', newId);
+        if (updateError) {
+            console.error('Error updating song URL:', updateError);
+            alert('MP3 uploaded but failed to update DB');
         } else {
+            newSongName.value = '';
+            newSongFile.value = '';
             await loadSongsFromDB();
             loadAdminSongs();
         }
@@ -789,13 +884,11 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error saving opacity:', error);
             alert('Failed to save opacity');
         } else {
-            Object.entries(updates).forEach(([key, val]) => {
-                if (key === 'bg_opacity') document.documentElement.style.setProperty('--bg-opacity', val);
-                if (key === 'surface_opacity') document.documentElement.style.setProperty('--surface-opacity', val);
-                if (key === 'note_opacity') document.documentElement.style.setProperty('--note-opacity', val);
-                if (key === 'playlist_opacity') document.documentElement.style.setProperty('--playlist-opacity', val);
-                if (key === 'guestbook_opacity') document.documentElement.style.setProperty('--guestbook-opacity', val);
-            });
+            document.documentElement.style.setProperty('--bg-opacity', updates.bg_opacity);
+            document.documentElement.style.setProperty('--surface-opacity', updates.surface_opacity);
+            document.documentElement.style.setProperty('--note-opacity', updates.note_opacity);
+            document.documentElement.style.setProperty('--playlist-opacity', updates.playlist_opacity);
+            document.documentElement.style.setProperty('--guestbook-opacity', updates.guestbook_opacity);
             alert('Opacity saved');
         }
     });
@@ -902,7 +995,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error saving all settings:', error);
             alert('Failed to save');
         } else {
-            // Apply all
             document.documentElement.style.setProperty('--bg-opacity', settings.bg_opacity);
             document.documentElement.style.setProperty('--surface-opacity', settings.surface_opacity);
             document.documentElement.style.setProperty('--note-opacity', settings.note_opacity);
@@ -924,8 +1016,8 @@ document.addEventListener('DOMContentLoaded', function() {
     trackOverallView();
     fetchViewCount();
     loadLinks();
-    loadSongsFromDB();   // load songs from DB
+    loadSongsFromDB();
     loadSiteSettings();
     navigate('home');
-    console.log('All systems go with Supabase + new features');
+    console.log('All systems go with Supabase + uploads');
 });
